@@ -3,12 +3,20 @@ Takes news transcripts scraped from archive.org and analyzes them for aggressive
 
 # Getting news transcript data
 
-The data used in this project was gathered by Gaurav Sood, and can be found here: https://github.com/notnews/archive_news_cc
+The data used in this project was gathered by [Gaurav Sood](gsood.com), and can be found [here](https://github.com/notnews/archive_news_cc)
 
 # Scripts
 
 1. split_transcripts.Rmd cleans the data, splits each transcript into individual sentences, and outputs the result.
 
 2. call_perspective_api.py assigns an aggression score to each sentence by calling the [perspective API](https://github.com/notnews/archive_news_cc). 
+
+3. clean_local_call_nums.r takes a list of local channels and ties them to the corresponding national network. 
+
+4. chart_creation.r cleans the scored data and includes basic exploratory analysis.
+
+# Data
+
+local_channels.csv includes every local news channel in the country along with the corresponding national network. Data gathered [here](https://en.wikipedia.org/wiki/List_of_United_States_over-the-air_television_networks).
 
 
