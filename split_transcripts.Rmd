@@ -1,0 +1,123 @@
+---
+title: "Getting the news data ready for analysis"
+author: "James Martherus"
+date: "3/30/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Split into sentences
+
+We have a huge csv file (27GB), with a column of transcripts. We want to split each transcript into sentences. Because the file is so large, we have to do this in chunks
+
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(data.table)
+
+File <- "/users/jamesmartherus/Dropbox/Research/Partisan_Dehumanization/Data/Sood_news_database/archive-cc-2017.csv"
+File_out <- "/users/jamesmartherus/Dropbox/Research/Partisan_Dehumanization/Data/Sood_news_database/archive-cc-2017-clean_0421.csv"
+
+file_colnames <- c("DESCRIPTION", "PROGRAM","access-restricted","addeddate", "aspect_ratio","audio_codec","audio_sample_rate","backup_location","ccnum","closed_captioning","collect","collection","colllection","color","contributor","coverage", "creator", "curation","date", "default_language","description","frames_per_second", "hidden", "homepage",  "identifier","identifier-access", "identifier-ark", "imagecount", "itemcollection", "language", "licenseurl", "mediatype", "mpeg_program", "nav_order", "next_item", "noarchivetorrent", "nonideal", "notes", "num_recent_reviews","num_top_dl", "ollection", "operator","own", "previous_item","program", "programSorter","public-format", "publicdate", "publisher", "rating","related_collection","repub_state","restricted-access", "runtime", "scandate", "scanner", "scanningcenter", "search_collection", "signal-info", "sound", "source", "source_pixel_height", "source_pixel_width", "sponsor", "spotlight_identifier", "start_localtime", "start_time", "station_name", "stop_time", "subject", "thumbs", "times", "title", "tuner", "updatedate", "updater", "uploader","utc_offset", "utm_term", "video_codec","year","text")
+
+
+#Setup           
+index <- -1
+chunkSize <- 10000
+dataChunk <- fread(File, nrows=chunkSize, header=T, fill=TRUE, sep=",",quote="\"")
+colnames(dataChunk) <- file_colnames
+
+# File gets messed up at line 71992, so we do the 70000 first and then fix it and do the rest in another loop. 
+repeat {
+        #the index tells R where we are in the file
+        index <- index + 1
+        print(paste('Processing rows:', index * chunkSize))
+ 
+        if (index==8){
+                print('Processed all files!')
+                break}
+       
+        #read in a chunk of the data of size `chunkSize` and restore column names
+        dataChunk <- fread(File, nrows=chunkSize, skip=index*chunkSize, header=T, fill = TRUE,
+              sep=",",quote="\"")
+        colnames(dataChunk) <- file_colnames
+
+
+        #drop non-english transcripts
+        #keep only necessary columns
+        #split transcripts into sentences
+        sentences <- dataChunk %>%
+          filter(language=="eng") %>%
+          select(text, contributor, date, program, year) %>%
+          unnest_tokens(output=text, input=text, token="regex", pattern="\\.") %>%
+          filter(nchar(text) > 25 & nchar(text) < 2000) 
+
+        sentences$text <- gsub(">>","",sentences$text)
+        sentences$text <- gsub("♪","",sentences$text)
+
+        
+        #write the manipulated chunk out to a new file
+        fwrite(sentences, file=File_out, append=TRUE)
+}
+
+```
+
+```{r}
+
+File <- "/users/jamesmartherus/Dropbox/Research/Partisan_Dehumanization/Data/Sood_news_database/archive-cc-2017.csv"
+File_out <- "/users/jamesmartherus/Dropbox/Research/Partisan_Dehumanization/Data/Sood_news_database/archive-cc-2017-clean_0421.csv"
+
+file_colnames <- c("DESCRIPTION", "PROGRAM","access-restricted","addeddate", "aspect_ratio","audio_codec","audio_sample_rate","backup_location","ccnum","closed_captioning","collect","collection","colllection","color","contributor","coverage", "creator", "curation","date", "default_language","description","frames_per_second", "hidden", "homepage",  "identifier","identifier-access", "identifier-ark", "imagecount", "itemcollection", "language", "licenseurl", "mediatype", "mpeg_program", "nav_order", "next_item", "noarchivetorrent", "nonideal", "notes", "num_recent_reviews","num_top_dl", "ollection", "operator","own", "previous_item","program", "programSorter","public-format", "publicdate", "publisher", "rating","related_collection","repub_state","restricted-access", "runtime", "scandate", "scanner", "scanningcenter", "search_collection", "signal-info", "sound", "source", "source_pixel_height", "source_pixel_width", "sponsor", "spotlight_identifier", "start_localtime", "start_time", "station_name", "stop_time", "subject","text", "thumbs", "times", "title", "tuner", "updatedate", "updater", "uploader","utc_offset", "utm_term", "video_codec","year")
+
+
+#Setup           
+index <- 82
+chunkSize <- 10000
+dataChunk <- fread(File, nrows=chunkSize, header=T, fill=TRUE, sep=",",quote="\"")
+
+# Do the rest of the lines here.
+repeat {
+        #the index tells R where we are in the file
+        index <- index + 1
+        print(paste('Processing rows:', index * chunkSize))
+ 
+        if (nrow(dataChunk) < chunkSize){
+                print('Processed all files!')
+                break}
+       
+        #read in a chunk of the data of size `chunkSize` and restore column names
+        dataChunk <- fread(File, nrows=chunkSize, skip=index*chunkSize, header=T, fill =TRUE,
+              sep=",", quote="\"")
+        colnames(dataChunk) <- file_colnames
+
+
+        #drop non-english transcripts
+        #keep only necessary columns
+        #split transcripts into sentences
+        sentences <- dataChunk %>%
+          filter(language=="eng") %>%
+          select(text, contributor, date, program, year) %>%
+          unnest_tokens(output=text, input=text, token="regex", pattern="\\.") %>%
+          filter(nchar(text) > 25 & nchar(text) < 2000) 
+
+        sentences$text <- gsub(">>","",sentences$text)
+        sentences$text <- gsub("♪","",sentences$text)
+
+        
+        #write the manipulated chunk out to a new file
+        fwrite(sentences, file=File_out, append=TRUE)
+}
+#stopped after "processing rows:380000"
+#stopped after "processing rows:460000"
+#stopped after "processing rows:500000"
+#stopped after "processing rows:720000"
+#stopped after "processing rows:820000"
+#change index when the code stops. For example, when it stops at 380000,
+#change the index to 38 and run the chunk again.
+
+
+```
